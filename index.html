@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Health Verifier — Zero-Dependency Pre/Post-Deployment Health & Silent Crash Auditor</title>
+    
+    <!-- SEO & Metadata -->
+    <meta name="description" content="Site Health Verifier is a high-speed, zero-dependency Python engine for pre/post-deployment website verification, silent CMS crash detection (WordPress WSOD, PHP, Django, Node.js), SSL tracking, and CI/CD automation.">
+    <meta name="keywords" content="site health verifier, deployment verification, wordpress critical error detection, silent crash detector, uptime monitor, python devops tool, ci cd deployment health, ssl expiry checker, seo audit cli">
+    <meta name="author" content="Avi Perera">
+    <link rel="canonical" href="https://a-vip.github.io/site-health-verifier/">
+    
+    <!-- OpenGraph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://a-vip.github.io/site-health-verifier/">
+    <meta property="og:title" content="Site Health Verifier — Zero-Dependency Pre/Post-Deployment Health Auditor">
+    <meta property="og:description" content="Instant multi-threaded website health checks, silent crash detection, SSL expiration audits, and CI/CD GitHub Actions integration with zero pip dependencies.">
+    <meta property="og:image" content="https://aviperera.com/wp-content/uploads/2024/09/cropped-Avi-Perera-website-aviperera.com-logo-welcome-to-my-website-friends-why-did-you-download-this-logo-1.png">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Site Health Verifier — Open-Source Deployment Assurance">
+    <meta name="twitter:description" content="Detect silent 200 OK crashes, inspect SSL, profile latency, and automate deployment checks in seconds.">
+    
+    <!-- GEO & Search Engine Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Site Health Verifier",
+          "operatingSystem": "Cross-platform (Linux, macOS, Windows)",
+          "applicationCategory": "DeveloperApplication",
+          "applicationSubCategory": "DevOps & Monitoring Tool",
+          "softwareVersion": "2.0.0",
+          "license": "https://opensource.org/licenses/MIT",
+          "author": {
+            "@type": "Person",
+            "name": "Avi Perera",
+            "url": "https://aviperera.com"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "Zero-dependency Python CLI and library that performs pre/post-deployment health audits, detects silent framework crashes (WordPress WSOD, PHP fatal errors, Django tracebacks), profiles latency, inspects SSL, and outputs formatted GitHub Step Summaries."
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Why is HTTP 200 status not enough to verify website health?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Many modern frameworks like WordPress, PHP, and Next.js can return HTTP 200 OK while rendering a blank 'White Screen of Death', database connection error, or fatal error notice in the HTML body. Site Health Verifier scans response bodies using regex pattern matching to detect these silent crashes."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What are the dependencies required to run Site Health Verifier?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Site Health Verifier requires zero external pip packages. It runs natively using Python 3.8+ standard libraries (urllib, ssl, concurrent.futures, json, html.parser)."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-base: #060913;
+            --bg-card: rgba(13, 19, 36, 0.7);
+            --bg-card-hover: rgba(20, 29, 54, 0.9);
+            --border-glow: rgba(0, 212, 255, 0.2);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --cyan-primary: #00d4ff;
+            --cyan-glow: rgba(0, 212, 255, 0.4);
+            --blue-accent: #3b82f6;
+            --green-pass: #10b981;
+            --red-fail: #ef4444;
+            --yellow-warn: #f59e0b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(0, 212, 255, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 75%, rgba(59, 130, 246, 0.08) 0%, transparent 45%);
+        }
+
+        header {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .brand-logo svg {
+            color: var(--cyan-primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--cyan-primary);
+        }
+
+        .btn-gh {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(59, 130, 246, 0.2));
+            border: 1px solid var(--border-glow);
+            color: var(--cyan-primary);
+            padding: 8px 18px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-gh:hover {
+            background: var(--cyan-primary);
+            color: #000;
+            box-shadow: 0 0 20px var(--cyan-glow);
+            transform: translateY(-2px);
+        }
+
+        .hero {
+            max-width: 1100px;
+            margin: 60px auto 40px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid var(--border-glow);
+            padding: 6px 16px;
+            border-radius: 9999px;
+            color: var(--cyan-primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            letter-spacing: 0.02em;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 5vw, 4.2rem);
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            margin-bottom: 24px;
+            background: linear-gradient(180deg, #ffffff 30%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h1 span {
+            background: linear-gradient(135deg, #00d4ff 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: clamp(1.05rem, 2vw, 1.3rem);
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto 36px;
+        }
+
+        .hero-actions {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 50px;
+        }
+
+        .btn-primary {
+            background: var(--cyan-primary);
+            color: #040914;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 35px rgba(0, 212, 255, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* CLI Terminal Showcase */
+        .terminal-wrapper {
+            max-width: 900px;
+            margin: 0 auto 80px;
+            background: #090e1d;
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 212, 255, 0.1);
+            overflow: hidden;
+            text-align: left;
+        }
+
+        .terminal-header {
+            background: #0d152a;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .dot.red { background: #ff5f56; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #27c93f; }
+
+        .terminal-title {
+            margin-left: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .terminal-body {
+            padding: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .terminal-body .cmd {
+            color: var(--cyan-primary);
+            font-weight: 700;
+        }
+        .terminal-body .pass { color: var(--green-pass); font-weight: 700; }
+        .terminal-body .badge-cyan { color: #38bdf8; }
+        .terminal-body .comment { color: #64748b; }
+
+        /* Feature Grid */
+        .features-section {
+            max-width: 1200px;
+            margin: 0 auto 100px;
+            padding: 0 20px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header h2 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 32px;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-glow);
+            transform: translateY(-4px);
+            background: var(--bg-card-hover);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(0, 212, 255, 0.1);
+            color: var(--cyan-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Benchmark comparison table */
+        .table-section {
+            max-width: 1000px;
+            margin: 0 auto 100px;
+            padding: 0 20px;
+        }
+
+        .styled-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .styled-table th, .styled-table td {
+            padding: 18px 24px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .styled-table th {
+            background: rgba(255, 255, 255, 0.03);
+            font-weight: 700;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .styled-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .highlight-col {
+            color: var(--cyan-primary);
+            font-weight: 700;
+        }
+
+        footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 50px 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--cyan-primary);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="#" class="brand-logo">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            Site Health Verifier
+        </a>
+        <div class="nav-links">
+            <a href="#features" class="nav-link">Features</a>
+            <a href="#comparison" class="nav-link">Comparison</a>
+            <a href="#faq" class="nav-link">FAQ</a>
+            <a href="https://github.com/a-vip/site-health-verifier" target="_blank" rel="noopener" class="btn-gh">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                </svg>
+                GitHub Star
+            </a>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="badge-pill">
+                <span>⚡ Version 2.0.0 Released</span> • Zero External Dependencies
+            </div>
+            <h1>Pre & Post-Deployment <span>Assurance for Modern Web</span></h1>
+            <p>
+                Eliminate silent HTTP 200 White Screens of Death, unhandled PHP/framework exceptions, expired SSL certs, and broken metadata before your visitors notice.
+            </p>
+            <div class="hero-actions">
+                <a href="https://github.com/a-vip/site-health-verifier" class="btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Get on GitHub
+                </a>
+                <a href="#quickstart" class="btn-secondary">View 30-Second Quickstart</a>
+            </div>
+
+            <!-- Terminal Showcase -->
+            <div class="terminal-wrapper" id="quickstart">
+                <div class="terminal-header">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                    <span class="terminal-title">bash — sitehealth https://aviperera.com --sitemap</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="comment"># Zero pip install required — runs directly with vanilla Python 3.8+</div>
+                    <div><span class="cmd">$</span> python sitehealth.py https://aviperera.com -p / -p /ai/ -p /law/ -p /tech/ -p /blog/</div>
+                    <br>
+                    <div>┌──────────────────────────────────────────────────────────────┐</div>
+                    <div>│        ⚡ SITE HEALTH VERIFIER — AUDIT REPORT                │</div>
+                    <div>└──────────────────────────────────────────────────────────────┘</div>
+                    <div>Target URL:   <span class="badge-cyan">https://aviperera.com</span></div>
+                    <div>TLS/SSL:      🔒 <span class="pass">VALID (36 days remaining)</span> <span class="comment">(Issuer: Let's Encrypt / YE1)</span></div>
+                    <div>----------------------------------------------------------------</div>
+                    <div><span class="pass">[ PASS ]</span> Home Page                200    1047ms     OK</div>
+                    <div><span class="pass">[ PASS ]</span> Ai                       200    1130ms     OK</div>
+                    <div><span class="pass">[ PASS ]</span> Law                      200    1098ms     OK</div>
+                    <div><span class="pass">[ PASS ]</span> Tech                     200    1065ms     OK</div>
+                    <div><span class="pass">[ PASS ]</span> Blog                     200    1120ms     OK</div>
+                    <div>----------------------------------------------------------------</div>
+                    <div>Latency Profile: min: 1047ms | avg: 1092ms | p95: 1130ms | max: 1130ms</div>
+                    <br>
+                    <div class="pass">✔ 100% HEALTHY — All endpoints passed perfectly with zero errors.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="features-section" id="features">
+            <div class="section-header">
+                <h2>Engineered for High-Reliability DevOps</h2>
+                <p>Built for developers, agency engineers, and webmasters who need instant verification across Git commits, CMS updates, and production migrations.</p>
+            </div>
+
+            <div class="grid-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </div>
+                    <h3>Silent Crash Detector</h3>
+                    <p>Catches WordPress critical error screens, PHP fatal errors, database connection drops, Django stack traces, and Node unhandled rejections that silently return HTTP 200.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </div>
+                    <h3>SSL/TLS Health & Expiry</h3>
+                    <p>Inspects peer certificate chains, issuers, and remaining days until expiration. Emits automated warnings before certificates expire and trigger browser security blocks.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    </div>
+                    <h3>Concurrent Latency Profiling</h3>
+                    <p>High-concurrency thread pooling delivers min, max, avg, and p95 latency percentiles across dozens of routes in under 5 seconds with automatic cache-busting.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    </div>
+                    <h3>SEO & Social Meta Auditor</h3>
+                    <p>Scans title tags, meta descriptions, canonical URLs, OpenGraph cards, and flags accidental <code>noindex</code> directives on production environments.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    </div>
+                    <h3>Automated Sitemap Discovery</h3>
+                    <p>Parses <code>sitemap.xml</code> and <code>robots.txt</code> directly to automatically discover all critical site routes without needing manual URL lists.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                    </div>
+                    <h3>GitHub Actions Step Summaries</h3>
+                    <p>Generates rich Markdown summaries directly into <code>$GITHUB_STEP_SUMMARY</code> or PR review comments, providing instant deployment confidence.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison Table -->
+        <section class="table-section" id="comparison">
+            <div class="section-header">
+                <h2>Why Site Health Verifier?</h2>
+                <p>Architectural comparison with traditional synthetic uptime monitors and browser test runners.</p>
+            </div>
+
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Capability</th>
+                        <th class="highlight-col">Site Health Verifier</th>
+                        <th>Curl / Bash Script</th>
+                        <th>UptimeRobot / SaaS</th>
+                        <th>Lighthouse CLI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Zero Dependencies</strong></td>
+                        <td class="highlight-col">✔ Yes (Pure Python Stdlib)</td>
+                        <td>✔ Yes (Bash)</td>
+                        <td>❌ Requires SaaS account</td>
+                        <td>❌ Huge (Node + Chrome)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Silent 200 Crash Detection</strong></td>
+                        <td class="highlight-col">✔ Yes (Regex Framework Engine)</td>
+                        <td>❌ Only checks status code</td>
+                        <td>❌ Partial / Keyword only</td>
+                        <td>❌ Performance only</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Execution Speed (6 Routes)</strong></td>
+                        <td class="highlight-col">⚡ ~1-3 seconds</td>
+                        <td>⏱ ~6-12 seconds</td>
+                        <td>⏱ 1-5 minutes polling</td>
+                        <td>⏱ 45-90 seconds</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SSL Expiration Headroom</strong></td>
+                        <td class="highlight-col">✔ Days countdown + Issuer</td>
+                        <td>❌ Complex openssl pipes</td>
+                        <td>✔ Yes</td>
+                        <td>❌ Not in standard run</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GitHub Action Summary Output</strong></td>
+                        <td class="highlight-col">✔ Built-in (--format markdown)</td>
+                        <td>❌ Custom echo scripting</td>
+                        <td>❌ External dashboard link</td>
+                        <td>❌ Complex HTML artifact</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pricing</strong></td>
+                        <td class="highlight-col">✔ 100% Free & Open Source</td>
+                        <td>✔ Free</td>
+                        <td>💰 Tiered Subscription</td>
+                        <td>✔ Free</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="features-section" id="faq">
+            <div class="section-header">
+                <h2>Frequently Asked Questions</h2>
+                <p>Generative Engine Optimized answers for technical developers and devops engineers.</p>
+            </div>
+
+            <div class="grid-3">
+                <div class="feature-card">
+                    <h3>How does it catch silent crashes?</h3>
+                    <p>The auditor passes response bodies through a pre-compiled engine of known crash signatures for WordPress (WSOD), PHP, Python tracebacks, Next.js hydration errors, and DB connection drops.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Does it bypass CDN caching?</h3>
+                    <p>Yes. By default, it appends unique microsecond timestamp parameters (<code>?_health_check=...</code>) to each route, ensuring tests reach the origin web server rather than stale edge caches.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Can I use it as a Python module?</h3>
+                    <p>Yes. You can import <code>from site_health_verifier import verify_site</code> directly into your Python test suites, AWS Lambda functions, or Celery workers.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>
+            Created by <a href="https://aviperera.com" target="_blank" rel="noopener">Avi Perera</a> • Released under the MIT License • Available on <a href="https://github.com/a-vip/site-health-verifier" target="_blank" rel="noopener">GitHub</a>
+        </p>
+    </footer>
+
+</body>
+</html>

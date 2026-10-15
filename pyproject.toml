@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "site-health-verifier"
+version = "2.0.0"
+description = "Zero-dependency pre/post-deployment health check, silent crash detector, and uptime auditor for modern web architectures."
+readme = "README.md"
+authors = [{ name = "Avi Perera", email = "avi@aviperera.com" }]
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP :: Site Management",
+    "Topic :: Software Development :: Testing",
+    "Topic :: System :: Monitoring",
+]
+keywords = [
+    "site-health",
+    "deployment-verification",
+    "uptime-monitor",
+    "devops",
+    "ci-cd",
+    "website-auditor",
+    "silent-crash-detector",
+    "wordpress-health",
+    "ssl-checker",
+    "seo-audit",
+    "github-actions"
+]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/a-vip/site-health-verifier"
+Documentation = "https://a-vip.github.io/site-health-verifier"
+Repository = "https://github.com/a-vip/site-health-verifier.git"
+Issues = "https://github.com/a-vip/site-health-verifier/issues"
+
+[project.scripts]
+sitehealth = "site_health_verifier.cli:main"
+site-health-verifier = "site_health_verifier.cli:main"

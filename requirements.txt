@@ -1,0 +1,5 @@
+# Site Health Verifier requires ZERO external runtime dependencies!
+# It runs out of the box using Python's standard library (3.8+).
+#
+# Optional development dependencies:
+# pytest>=7.0.0
