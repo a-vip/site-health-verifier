@@ -6,7 +6,12 @@ on:
   pull_request:
     branches: [ master, main ]
   schedule:
-    - cron: '0 6 * * *' # Daily automated health check
+    - cron: '0 6 * * *' # Daily automated health check at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
 
 jobs:
   test:
@@ -34,7 +39,7 @@ jobs:
           sitehealth --help
 
   live-health-check:
-    name: Live Deployment Verification Example
+    name: Live Deployment Verification & SSL Sentinel
     runs-on: ubuntu-latest
     needs: test
     steps:
@@ -46,5 +51,17 @@ jobs:
           python-version: "3.11"
 
       - name: Verify Live Endpoints & Output GitHub Step Summary
+        id: health_audit
         run: |
-          python sitehealth.py https://aviperera.com -p / -p /ai/ -p /law/ -p /tech/ -p /projects/ -p /blog/ --format markdown >> $GITHUB_STEP_SUMMARY
+          python sitehealth.py https://aviperera.com -p / -p /ai/ -p /law/ -p /tech/ -p /projects/ -p /blog/ --format markdown | tee audit_report.md
+          cat audit_report.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Create Alert Issue on Degradation
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "🚨 Site Health Incident: aviperera.com degraded or failed health check" \
+            --body "The scheduled Site Health Verifier workflow detected an outage, degraded endpoint, or SSL certificate anomaly on https://aviperera.com. Please check the workflow run logs for full latency metrics and findings." \
+            --label "bug" || true
