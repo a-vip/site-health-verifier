@@ -1,0 +1,43 @@
+name: Search Console & Technical SEO Sentinel
+
+on:
+  schedule:
+    # Run twice weekly (Sundays & Wednesdays at 03:00 UTC)
+    - cron: '0 3 * * 0,3'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  seo-indexability-audit:
+    name: Audit Sitemaps, Robots.txt & GSC Directives
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Unit Tests
+        run: |
+          python -m unittest discover tests
+
+      - name: Execute SEO Indexability Audit
+        run: |
+          python -m site_health_verifier.seo_audit https://aviperera.com
+
+      - name: Create Alert Issue on Indexability Failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "🚨 GSC Alert: Critical indexing anomalies detected on aviperera.com sitemap" \
+            --body "The scheduled Technical SEO Sentinel found invalid URLs (404 Not Found, redirect chains, or noindex conflicts) inside the live XML sitemap. Please review the workflow run summary for the full list of flagged URLs." \
+            --label "bug" || true
