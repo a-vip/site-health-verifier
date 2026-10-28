@@ -23,6 +23,12 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
+BROWSER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9"
+}
+
 
 class RobotsTxtAuditor:
     def __init__(self, base_url: str):
@@ -34,7 +40,7 @@ class RobotsTxtAuditor:
         self.is_valid = False
 
     def fetch_and_parse(self) -> bool:
-        headers = {"User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"}
+        headers = BROWSER_HEADERS
         try:
             req = urllib.request.Request(self.robots_url, headers=headers)
             with urllib.request.urlopen(req, timeout=12) as resp:
@@ -75,7 +81,7 @@ class SitemapAuditor:
         self.urls: List[str] = []
 
     def fetch_urls(self) -> List[str]:
-        headers = {"User-Agent": "Mozilla/5.0"}
+        headers = BROWSER_HEADERS
         try:
             req = urllib.request.Request(self.sitemap_url, headers=headers)
             with urllib.request.urlopen(req, timeout=15) as resp:
@@ -117,7 +123,7 @@ def inspect_url(url: str, robots_checker: RobotsTxtAuditor) -> Dict[str, Any]:
     opener = urllib.request.build_opener(NoRedirectHandler)
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"}
+        headers=BROWSER_HEADERS
     )
 
     try:
@@ -156,7 +162,7 @@ def inspect_url(url: str, robots_checker: RobotsTxtAuditor) -> Dict[str, Any]:
     return result
 
 
-def run_seo_audit(target_domain: str = "https://aviperera.com", max_workers: int = 10) -> Dict[str, Any]:
+def run_seo_audit(target_domain: str = "https://aviperera.com", max_workers: int = 4) -> Dict[str, Any]:
     print(f"=== Starting Technical SEO & GSC Indexability Audit for {target_domain} ===")
     
     # 1. Audit robots.txt
